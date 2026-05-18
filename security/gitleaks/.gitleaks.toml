@@ -1,0 +1,20 @@
+title = "Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[[rules]]
+description = "Custom API Key Detection"
+id = "custom-api-key"
+regex = '''(?i)(api[_-]?key|apikey)\s*[:=]\s*["\']?([a-zA-Z0-9_-]{20,})["\']?'''
+keywords = ["api_key", "apikey", "api-key"]
+
+[[rules]]
+description = "Database Password Detection"
+id = "database-password"
+regex = '''(?i)(password|passwd|pwd)\s*[:=]\s*["\']([^"'\s]{8,})["\']'''
+keywords = ["password", "passwd", "pwd"]
+
+[allowlist]
+description = "Allowlist for test files"
+files = ['''test_.*\.py$''']
