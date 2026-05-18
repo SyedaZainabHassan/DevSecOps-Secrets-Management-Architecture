@@ -1,0 +1,33 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  gitleaks:
+    name: GitLeaks Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up GitLeaks
+        run: |
+          wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz
+          tar -xzf gitleaks_8.18.0_linux_x64.tar.gz
+          sudo mv gitleaks /usr/local/bin/
+
+      - name: Run GitLeaks scan
+        run: gitleaks detect --source . --config security/gitleaks/.gitleaks.toml --verbose --report-format sarif --report-path gitleaks-report.sarif
+
+      - name: Upload GitLeaks report
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.sarif
