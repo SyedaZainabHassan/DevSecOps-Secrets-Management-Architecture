@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-myapp
+  labels:
+    app: python-myapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: python-myapp
+  template:
+    metadata:
+      labels:
+        app: python-myapp
+      annotations:
+        vault.hashicorp.com/agent-inject: 'true'
+        vault.hashicorp.com/role: 'myapp'
+        vault.hashicorp.com/agent-inject-secret-database-config.txt: 'secret/data/myapp/config'
+        vault.hashicorp.com/agent-inject-template-database-config.txt: |
+          {{- with secret "secret/data/myapp/config" -}}
+          {
+            "database_password": "{{ .Data.data.database_password }}",
+            "api_key": "{{ .Data.data.api_key }}",
+            "database_url": "{{ .Data.data.database_url }}"
+          }
+          {{- end -}}
+    spec:
+      serviceAccountName: myapp
+      containers:
+      - name: python-app
+        image: python:3.9-slim
+        command: ["python", "/app/app.py"]
+        volumeMounts:
+        - name: app-code
+          mountPath: /app
+        - name: secrets
+          mountPath: /vault/secrets
+          readOnly: true
+      volumes:
+      - name: app-code
+        configMap:
+          name: python-app-code
+      - name: secrets
+        emptyDir: {}
